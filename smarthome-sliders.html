@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Home – Luči</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e12;
+    --surface: #17171e;
+    --surface2: #1f1f2a;
+    --border: rgba(255,255,255,0.06);
+    --text: #ffffff;
+    --text-dim: rgba(255,255,255,0.38);
+    --text-mid: rgba(255,255,255,0.65);
+    --amber: #F0A030;
+    --amber-dim: rgba(240,160,48,0.12);
+    --purple: #8B7FE8;
+    --purple-dim: rgba(139,127,232,0.12);
+    --blue: #5B9CF6;
+    --blue-dim: rgba(91,156,246,0.12);
+    --radius: 20px;
+    --radius-sm: 12px;
+  }
+
+  html, body {
+    width: 390px;
+    min-height: 844px;
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body { padding: 48px 20px 40px; }
+
+  /* Header */
+  .header { margin-bottom: 32px; }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .greeting { font-size: 24px; font-weight: 500; letter-spacing: -0.3px; }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #4ade80; margin-top: 6px;
+    box-shadow: 0 0 0 3px rgba(74,222,128,0.15);
+  }
+  .subtitle { font-size: 13px; color: var(--text-dim); font-weight: 300; }
+
+  /* Room tabs */
+  .rooms { display: flex; gap: 8px; margin-bottom: 28px; overflow-x: auto; padding-bottom: 2px; }
+  .rooms::-webkit-scrollbar { display: none; }
+  .room {
+    padding: 7px 16px; border-radius: 99px;
+    font-size: 13px; font-weight: 400; white-space: nowrap;
+    cursor: pointer; border: 1px solid var(--border);
+    color: var(--text-dim); background: transparent;
+    transition: all 0.18s ease;
+  }
+  .room.active {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.18);
+    color: var(--text);
+  }
+
+  /* Section label */
+  .section-label {
+    font-size: 11px; letter-spacing: 0.08em;
+    color: var(--text-dim); text-transform: uppercase;
+    margin-bottom: 14px; font-weight: 400;
+  }
+
+  /* Main light card */
+  .main-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 14px;
+  }
+
+  .main-card-header {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; margin-bottom: 24px;
+  }
+
+  .light-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: var(--amber-dim);
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+  .toggle-label { font-size: 12px; color: var(--text-dim); }
+
+  .toggle {
+    width: 44px; height: 26px; border-radius: 99px;
+    border: none; cursor: pointer; position: relative;
+    transition: background 0.22s ease; flex-shrink: 0;
+  }
+  .toggle.on { background: var(--amber); }
+  .toggle.off { background: rgba(255,255,255,0.08); }
+  .toggle::after {
+    content: ''; position: absolute;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; top: 3px;
+    transition: left 0.22s ease;
+  }
+  .toggle.on::after { left: 21px; }
+  .toggle.off::after { left: 3px; }
+
+  .main-title { font-size: 18px; font-weight: 500; margin-bottom: 2px; }
+  .main-room { font-size: 13px; color: var(--text-dim); font-weight: 300; }
+
+  /* Big value display */
+  .value-display {
+    display: flex; align-items: flex-end;
+    gap: 4px; margin-bottom: 20px;
+  }
+  .value-number {
+    font-size: 56px; font-weight: 300;
+    line-height: 1; letter-spacing: -2px;
+    color: var(--text); transition: color 0.2s;
+  }
+  .value-unit {
+    font-size: 20px; color: var(--text-dim);
+    margin-bottom: 8px; font-weight: 300;
+  }
+
+  /* Slider */
+  .slider-track-wrap { position: relative; margin-bottom: 8px; }
+
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 5px; border-radius: 99px;
+    outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #fff; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  .slider-amber { background: linear-gradient(to right, var(--amber) var(--v,70%), rgba(255,255,255,0.08) var(--v,70%)); }
+  .slider-purple { background: linear-gradient(to right, var(--purple) var(--v,60%), rgba(255,255,255,0.08) var(--v,60%)); }
+  .slider-blue { background: linear-gradient(to right, var(--blue) var(--v,50%), rgba(255,255,255,0.08) var(--v,50%)); }
+
+  .slider-ends {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--text-dim); margin-top: 6px;
+  }
+
+  /* Mini cards grid */
+  .mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+
+  .mini-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 18px 16px;
+  }
+
+  .mini-header {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 16px;
+  }
+
+  .mini-icon {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .mini-icon.purple { background: var(--purple-dim); }
+  .mini-icon.blue { background: var(--blue-dim); }
+
+  .mini-toggle {
+    width: 34px; height: 20px; border-radius: 99px;
+    border: none; cursor: pointer; position: relative;
+    transition: background 0.22s ease;
+  }
+  .mini-toggle.on { background: var(--purple); }
+  .mini-toggle.off { background: rgba(255,255,255,0.08); }
+  .mini-toggle::after {
+    content: ''; position: absolute;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #fff; top: 3px;
+    transition: left 0.22s;
+  }
+  .mini-toggle.on::after { left: 17px; }
+  .mini-toggle.off::after { left: 3px; }
+
+  .mini-title { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .mini-val { font-size: 11px; color: var(--text-dim); margin-bottom: 14px; }
+
+  input.mini-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 3px; border-radius: 99px;
+    outline: none; cursor: pointer;
+  }
+  input.mini-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #fff; cursor: pointer;
+  }
+
+  /* Preset buttons */
+  .presets { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .preset {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 8px;
+    text-align: center; cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .preset:hover { border-color: rgba(255,255,255,0.18); background: var(--surface2); }
+  .preset.selected { border-color: var(--amber); background: var(--amber-dim); }
+  .preset-icon { font-size: 18px; margin-bottom: 6px; }
+  .preset-name { font-size: 12px; color: var(--text-dim); }
+  .preset.selected .preset-name { color: var(--amber); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="greeting">Dnevna soba</div>
+    <div class="status-dot"></div>
+  </div>
+  <div class="subtitle">4 naprave aktivne · Zdaj</div>
+</div>
+
+<div class="rooms">
+  <button class="room active" onclick="selectRoom(this)">Dnevna soba</button>
+  <button class="room" onclick="selectRoom(this)">Spalnica</button>
+  <button class="room" onclick="selectRoom(this)">Kuhinja</button>
+  <button class="room" onclick="selectRoom(this)">Kopalnica</button>
+</div>
+
+<div class="section-label">Glavna luč</div>
+
+<div class="main-card">
+  <div class="main-card-header">
+    <div class="light-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="5" fill="#F0A030"/>
+        <line x1="12" y1="2" x2="12" y2="4" stroke="#F0A030" stroke-width="2" stroke-linecap="round"/>
+        <line x1="12" y1="20" x2="12" y2="22" stroke="#F0A030" stroke-width="2" stroke-linecap="round"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="#F0A030" stroke-width="2" stroke-linecap="round"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="#F0A030" stroke-width="2" stroke-linecap="round"/>
+        <line x1="2" y1="12" x2="4" y2="12" stroke="#F0A030" stroke-width="2" stroke-linecap="round"/>
+        <line x1="20" y1="12" x2="22" y2="12" stroke="#F0A030" stroke-width="2" stroke-linecap="round"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="#F0A030" stroke-width="2" stroke-linecap="round"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="#F0A030" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="toggle-wrap">
+      <span class="toggle-label" id="main-label">Vklopljeno</span>
+      <button class="toggle on" id="main-toggle" onclick="toggleMain()"></button>
+    </div>
+  </div>
+
+  <div class="value-display">
+    <span class="value-number" id="main-num">70</span>
+    <span class="value-unit">%</span>
+  </div>
+
+  <input type="range" min="0" max="100" value="70" step="1"
+    class="slider-amber" style="--v:70%"
+    id="main-slider" oninput="updateMain(this)">
+
+  <div class="slider-ends"><span>0%</span><span>100%</span></div>
+</div>
+
+<div class="section-label" style="margin-top:20px">Dodatne naprave</div>
+
+<div class="mini-grid">
+  <div class="mini-card">
+    <div class="mini-header">
+      <div class="mini-icon purple">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B7FE8" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="3"/>
+          <path d="M8 12h8M8 8h5M8 16h3"/>
+        </svg>
+      </div>
+      <button class="mini-toggle on" onclick="toggleMini(this,'rol-val')"></button>
+    </div>
+    <div class="mini-title">Roloji</div>
+    <div class="mini-val" id="rol-val">65% odprti</div>
+    <input type="range" min="0" max="100" value="65" step="1"
+      class="mini-slider slider-purple" style="--v:65%"
+      oninput="updateMini(this,'rol-val','% odprti')">
+  </div>
+
+  <div class="mini-card">
+    <div class="mini-header">
+      <div class="mini-icon blue">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B9CF6" stroke-width="2">
+          <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 5v5l3 3"/>
+        </svg>
+      </div>
+      <button class="mini-toggle on" onclick="toggleMini(this,'temp-val')"></button>
+    </div>
+    <div class="mini-title">Temperatura</div>
+    <div class="mini-val" id="temp-val">21°C</div>
+    <input type="range" min="16" max="28" value="21" step="1"
+      class="mini-slider slider-blue" style="--v:42%"
+      oninput="updateTemp(this)">
+  </div>
+</div>
+
+<div class="section-label">Razpoloženje</div>
+<div class="presets">
+  <div class="preset selected" onclick="selectPreset(this, 85)">
+    <div class="preset-icon">☀️</div>
+    <div class="preset-name">Živahno</div>
+  </div>
+  <div class="preset" onclick="selectPreset(this, 45)">
+    <div class="preset-icon">🌙</div>
+    <div class="preset-name">Večer</div>
+  </div>
+  <div class="preset" onclick="selectPreset(this, 15)">
+    <div class="preset-icon">🎬</div>
+    <div class="preset-name">Film</div>
+  </div>
+</div>
+
+<script>
+  function selectRoom(el) {
+    document.querySelectorAll('.room').forEach(r => r.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function updateMain(inp) {
+    const v = Math.round(inp.value);
+    inp.style.setProperty('--v', v + '%');
+    document.getElementById('main-num').textContent = v;
+    const isOn = v > 0;
+    document.getElementById('main-label').textContent = isOn ? 'Vklopljeno' : 'Izklopljeno';
+    const t = document.getElementById('main-toggle');
+    t.className = 'toggle ' + (isOn ? 'on' : 'off');
+  }
+
+  function toggleMain() {
+    const t = document.getElementById('main-toggle');
+    const sl = document.getElementById('main-slider');
+    const isOn = t.classList.contains('on');
+    t.className = 'toggle ' + (isOn ? 'off' : 'on');
+    const newVal = isOn ? 0 : 70;
+    sl.value = newVal;
+    updateMain(sl);
+  }
+
+  function updateMini(inp, valId, suffix) {
+    const v = Math.round(inp.value);
+    const pct = (inp.max - inp.min) > 0
+      ? Math.round((v - inp.min) / (inp.max - inp.min) * 100)
+      : 0;
+    inp.style.setProperty('--v', pct + '%');
+    document.getElementById(valId).textContent = v + suffix;
+  }
+
+  function updateTemp(inp) {
+    const v = Math.round(inp.value);
+    const pct = Math.round((v - 16) / 12 * 100);
+    inp.style.setProperty('--v', pct + '%');
+    document.getElementById('temp-val').textContent = v + '°C';
+  }
+
+  function toggleMini(btn, valId) {
+    btn.classList.toggle('on');
+    btn.classList.toggle('off');
+  }
+
+  function selectPreset(el, brightness) {
+    document.querySelectorAll('.preset').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+    const sl = document.getElementById('main-slider');
+    sl.value = brightness;
+    updateMain(sl);
+  }
+</script>
+</body>
+</html>
